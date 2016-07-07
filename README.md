@@ -26,9 +26,11 @@ This program extends "ex01.py". When program make coupus, All text are executed 
 If you execute "ex01_plus.py", you need to another tool named "TreeTagger" and wrapper script for python.
 
 download here
+
 http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/
 
 You can get wrapper module below command.
+
 	pip install treetaggerwrapper
 
 ## Please
