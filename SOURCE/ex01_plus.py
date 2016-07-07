@@ -2,8 +2,11 @@
 # 5216C024-2
 # This script is origin and PUBLIC
 
-import re,io,os.path,os
+import re,io,os.path,os,time
 from math import log
+import treetaggerwrapper
+import cy_ex01 as cyex
+hd = os.environ["HOME"]
 GREEN = '\033[32m'
 ENDC = '\033[0m'
 
@@ -14,9 +17,34 @@ def remove_tag(str):
         return False
     return True
 
-# 　This module read all text file and convert to list.
-def create_coupus():
-    # coupus = ""
+# This module executes Morphological analysis
+def extract_none(line, tagger):
+    words = []
+    try:
+        tags = tagger.TagText(line)
+        for tag in tags:
+            list = tag.split("\t")
+            # ports of speech
+            pos = list[1]
+            if pos == 'NN':
+                words.append(list[0])
+            elif pos == 'NP':
+                words.append(list[0])
+            # If noun is pluralform...
+            elif pos == 'NNS':
+                if list[2] != u'<unknown>':
+                    words.append(list[2])    # original form
+            elif pos == 'NPS':
+                if list[2] != u'<unknown>':
+                    words.append(list[2])    # original form
+    except:
+        print line + " couldn't translate because invalid character"
+    # print words
+    return words
+
+
+def create_coupus(is_only_noun):
+    tagger = treetaggerwrapper.TreeTagger(TAGLANG='en',TAGDIR=hd +'/Documents/Tigger')
     coupus = []
     filenames = []
     doc_number = 0
@@ -24,13 +52,20 @@ def create_coupus():
         filenames.append( line.rstrip() )
         doc_number += 1
         filename = './../TXT/tragedies/'+line.rstrip()
-        # print filename
+        print filename
         doc = []
         for line in io.open(filename,"r", encoding="utf-16"):
             if remove_tag(line):
                 # remove signiture
                 line = re.sub( re.compile("[!-/:-@[-`{-~;?]"), "" , line ).rstrip()
-                doc += line.split()
+                # Line is converted to list
+                if is_only_noun:
+                    # Morphological analysis
+                    doc += extract_none(line, tagger)
+                else:
+                    # Just convert to list existing words
+                    doc += line.split()
+
         coupus.append(doc)
     return coupus, filenames
 
@@ -54,7 +89,6 @@ def circulate_idf(word, docs):
             nj += 1
     return log(1.0*D / nj)
 
-
 def circulate_all_tfidf(filenames, coupus):
     for(filename, doc) in zip(filenames, coupus):
         print '\n' + GREEN + filename + ENDC
@@ -65,15 +99,16 @@ def circulate_all_tfidf(filenames, coupus):
         dict = {}
         for word in li_uniq:
             dict[word.encode('utf-8')] = doc.count(word) * circulate_idf(word, coupus)
-        # sort dictionary to list.
-        #  key is tf-idf score
+        # sort dictionary to list
         d = sorted(dict.items(), key=lambda x:x[1], reverse=True)
         # print key and value of the top 5
         for k in d[0:5]:
             print k
 
 if __name__ == '__main__':
-    coupus, filenames = create_coupus()
+    start = time.time()
+    coupus, filenames = create_coupus(True)
+
     D = len(filenames)
     print 'NUMBER OF DOCUMENT: ' + str(D)
 
@@ -93,6 +128,7 @@ if __name__ == '__main__':
         print 'file: ' + GREEN + filename.rstrip() + ENDC
         print 'tf: ' + str(tf) + '  tf-idf: ' + str(tf*idf)
 
-
     # Extra study
     circulate_all_tfidf(filenames,coupus)
+    elapsed_time = time.time() - start
+    print ("elapsed_time:{0}".format(elapsed_time)) + "[sec]"
