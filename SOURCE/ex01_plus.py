@@ -2,7 +2,7 @@
 # 5216C024-2
 # This script is origin and PUBLIC
 
-import re,io,os.path,os,time
+import re,io,os.path,os,time,csv
 from math import log
 import treetaggerwrapper
 import cy_ex01 as cyex
@@ -39,7 +39,6 @@ def extract_none(line, tagger):
                     words.append(list[2])    # original form
     except:
         print line + " couldn't translate because invalid character"
-    # print words
     return words
 
 
@@ -59,14 +58,18 @@ def create_coupus(is_only_noun):
                 # remove signiture
                 line = re.sub( re.compile("[!-/:-@[-`{-~;?]"), "" , line ).rstrip()
                 # Line is converted to list
-                if is_only_noun:
+                if len(line) == 0:
+                    pass
+                elif is_only_noun:
                     # Morphological analysis
-                    doc += extract_none(line, tagger)
+                    ws = extract_none(line, tagger)
+                    if len(ws) != 0:
+                        doc += ws
                 else:
-                    # Just convert to list existing words
+                    # Just convert to list
                     doc += line.split()
-
-        coupus.append(doc)
+        if len(doc) != 0:
+            coupus.append(doc)
     return coupus, filenames
 
 def circulate_tfidf(word, docs):
@@ -108,21 +111,35 @@ def circulate_all_tfidf(filenames, coupus):
 if __name__ == '__main__':
     start = time.time()
     coupus, filenames = create_coupus(True)
+    elapsed_time = time.time() - start
+    print ("coupus_time: {0}".format(elapsed_time)) + "[sec]"
+
+    with open('coupus.csv', 'w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerows(coupus)
 
     D = len(filenames)
     print 'NUMBER OF DOCUMENT: ' + str(D)
 
     print "\n\n\n###Julius start!!!###"
     tfs, nj = circulate_tfidf("Julius", coupus)
-    idf = log(1.0*D / nj)
+    if nj != 0:
+        idf = log(1.0*D / nj)
+    else:
+        print 'That keyword has not occurred.'
+        idf = 0
     print 'IDF: ' + str(idf)
     for (filename,tf) in zip(filenames, tfs):
         print 'file: ' + GREEN + filename.rstrip() + ENDC
         print 'tf: ' + str(tf) + '  tf-idf: ' + str(tf*idf)
 
     print "\n\n\n###Burutas start!!!###"
-    tfs, nj = circulate_tfidf("Burutas", coupus)
-    idf = log(1.0*D / nj)
+    tfs, nj = circulate_tfidf("Brutus", coupus)
+    if nj != 0:
+        idf = log(1.0*D / nj)
+    else:
+        print 'That keyword has not occurred.'
+        idf = 0
     print 'IDF: ' + str(idf)
     for (filename,tf) in zip(filenames, tfs):
         print 'file: ' + GREEN + filename.rstrip() + ENDC
@@ -130,5 +147,6 @@ if __name__ == '__main__':
 
     # Extra study
     circulate_all_tfidf(filenames,coupus)
+
     elapsed_time = time.time() - start
-    print ("elapsed_time:{0}".format(elapsed_time)) + "[sec]"
+    print ("elapsed_time: {0}".format(elapsed_time)) + "[sec]"
