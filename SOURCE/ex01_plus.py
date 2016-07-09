@@ -114,9 +114,9 @@ if __name__ == '__main__':
     elapsed_time = time.time() - start
     print ("coupus_time: {0}".format(elapsed_time)) + "[sec]"
 
-    with open('coupus.csv', 'w') as f:
-        writer = csv.writer(f, lineterminator='\n')
-        writer.writerows(coupus)
+    # with open('coupus.csv', 'w') as f:
+    #     writer = csv.writer(f, lineterminator='\n')
+    #     writer.writerows(coupus)
 
     D = len(filenames)
     print 'NUMBER OF DOCUMENT: ' + str(D)
